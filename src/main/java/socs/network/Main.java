@@ -12,6 +12,5 @@ public class Main {
     }
     Router r = new Router(new Configuration(args[0]));
     r.terminal();
-    System.out.println("hello");
   }
 }
