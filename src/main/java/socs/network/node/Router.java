@@ -15,6 +15,7 @@ public class Router {
   //assuming that all routers are with 4 ports
   Link[] ports = new Link[4];
 
+  // Server instance for socket programming
   private Server server;
   public Router(Configuration config) {
     rd.simulatedIPAddress = config.getString("socs.network.router.ip");
