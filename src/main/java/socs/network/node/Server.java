@@ -17,13 +17,12 @@ public class Server implements Runnable{
 
     /**
      * Constructor for Server class
-     * @param port the process port number of server
      * @param router the router instance which has the server running
      */
-    public Server(int port, Router router){
+    public Server(Router router){
         this.router = router;
         try {
-            serverSocket = new ServerSocket(port);
+            this.serverSocket = new ServerSocket(router.rd.processPortNumber);
         } catch (IOException e) {
             System.out.println("Port cannot be used");
         }
@@ -84,9 +83,55 @@ public class Server implements Runnable{
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 try {
-                    Object input = in.readObject();
-                    
+                    SOSPFPacket received = (SOSPFPacket) in.readObject();
+                    System.out.println("Received"); // TODO: DELETE THIS LINE
+                    if (received.sospfType == 0) {
+                        System.out.println("received HELLO from " + received.srcIP + ";");
 
+                        // check if the target router has already been attached
+                        for (int i=0; i<4; i++) {
+                            if (null != router.ports[i] && router.ports[i].router2.simulatedIPAddress.equals(received.dstIP)) {
+                                System.err.println("This router has already been attached!");
+                                return;
+                            }
+                        }
+
+                        // create a RouterDescription for the remote router
+                        RouterDescription remote_rd = new RouterDescription(received.srcProcessIP,
+                                received.srcProcessPort, received.srcIP);
+                        // create a link of these two routers
+                        Link link = new Link(router.rd, remote_rd);
+                        // put it into ports[]
+                        int i;
+                        for (i=0; i<4; i++) {
+                            if (null == router.ports[i]) {
+                                router.ports[i] = link;
+                                router.ports[i].router2.status = RouterStatus.INIT;
+                                break;
+                            }
+                        }
+                        // no more free port
+                        if ( i == 4) {
+                            System.err.println("All ports are occupied, link cannot be established.");
+                            return;
+                        }
+                        System.out.println("set " + received.srcIP + " state to INIT;");
+                        SOSPFPacket sent = new SOSPFPacket(router.rd.processIPAddress, router.rd.processPortNumber,
+                                router.rd.simulatedIPAddress, received.srcIP, (short) 0,
+                                "", "", null);
+                        out.writeObject(sent);
+                        received = (SOSPFPacket) in.readObject();
+                        if (received.sospfType == 0) {
+                            router.ports[i].router2.status = RouterStatus.TWO_WAY;
+                            System.out.println("set " + received.srcIP + " state to TWO_WAY;");
+                        }
+                        else {
+                            // TODO: LSAUPDATE?
+                        }
+
+                    } else {
+                        // TODO: LSAUPDATE?
+                    }
                 } catch (ClassNotFoundException cnfe) {
                     System.out.println("Object class not found");
                 }

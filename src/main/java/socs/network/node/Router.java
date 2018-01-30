@@ -1,9 +1,14 @@
 package socs.network.node;
 
+import socs.network.message.SOSPFPacket;
 import socs.network.util.Configuration;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+import socs.network.node.RouterStatus;
 
 
 public class Router {
@@ -17,14 +22,24 @@ public class Router {
 
   // Server instance for socket programming
   private Server server;
-  public Router(Configuration config) {
-    rd.simulatedIPAddress = config.getString("socs.network.router.ip");
-    lsd = new LinkStateDatabase(rd);
-    // TODO: ADD process IP and port to rd
-    rd.processIPAddress = "localhost";
-    rd.processPortNumber = 5000;
-    server = new Server(rd.processPortNumber, this);
-    new Thread(server).start();
+  public Router(Configuration config, char n) {
+
+      rd.simulatedIPAddress = config.getString("socs.network.router.ip");
+
+      lsd = new LinkStateDatabase(rd);
+      InetAddress IP;
+      try {
+          IP = InetAddress.getLocalHost();
+          rd.processIPAddress = IP.getHostAddress();
+      } catch (UnknownHostException e) {
+          System.err.println("Unknown Host, Router exit");
+          System.exit(-1);
+      }
+      rd.processPortNumber = (short)(7000 + n - 49);
+      System.out.println("Host name of Router "+(n-48)+ " : "+rd.processIPAddress);
+      System.out.println("Port number of Router "+(n-48)+ " : "+rd.processPortNumber);
+      server = new Server(this);
+      new Thread(server).start();
   }
 
   /**
@@ -94,6 +109,39 @@ public class Router {
    */
   private void processStart() {
 
+      for (Link l : ports) {
+          if (null == l) continue;
+          SOSPFPacket packet = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
+                  l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 0,
+                  "", "", null);
+          try {
+              Socket clientSocket = new Socket(l.router2.processIPAddress, l.router2.processPortNumber);
+              System.out.println("Connected"); // TODO: DELETE THIS LINE
+              ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+              ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+
+              out.writeObject(packet);
+              System.out.println("Sent"); // TODO: DELETE THIS LINE
+              SOSPFPacket received = (SOSPFPacket) in.readObject();
+              if (received.sospfType == 0){
+                  System.out.println("received HELLO from " + received.srcIP + ";");
+                  l.router2.status = RouterStatus.TWO_WAY;
+                  System.out.println("set " + received.srcIP + " state to TWO_WAY;");
+
+              }
+              else {}
+              clientSocket.close();
+              in.close();
+              out.close();
+          } catch (Exception e){
+              if (e instanceof IOException)
+                  System.err.println("Port cannot be used");
+              else if (e instanceof ClassNotFoundException)
+                  System.err.println("In stream object class not found");
+              else
+                  System.err.println(e.getMessage());
+          }
+      }
   }
 
   /**
