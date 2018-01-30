@@ -15,9 +15,13 @@ public class Router {
   //assuming that all routers are with 4 ports
   Link[] ports = new Link[4];
 
+  private Server server;
   public Router(Configuration config) {
     rd.simulatedIPAddress = config.getString("socs.network.router.ip");
     lsd = new LinkStateDatabase(rd);
+    server = new Server(rd.processPortNumber, this);
+    new Thread(server).start();
+
   }
 
   /**
@@ -87,6 +91,7 @@ public class Router {
   }
 
   public void terminal() {
+
     try {
       InputStreamReader isReader = new InputStreamReader(System.in);
       BufferedReader br = new BufferedReader(isReader);
