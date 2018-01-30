@@ -32,7 +32,7 @@ public class Router {
    * <p/>
    * format: source ip address  -> ip address -> ... -> destination ip
    *
-   * @param destinationIP the ip adderss of the destination simulated router
+   * @param destinationIP the ip address of the destination simulated router
    */
   private void processDetect(String destinationIP) {
 
@@ -50,7 +50,7 @@ public class Router {
 
   /**
    * attach the link to the remote router, which is identified by the given simulated ip;
-   * to establish the connection via socket, you need to indentify the process IP and process Port;
+   * to establish the connection via socket, you need to identify the process IP and process Port;
    * additionally, weight is the cost to transmitting data through the link
    * <p/>
    * NOTE: this command should not trigger link database synchronization
@@ -58,6 +58,35 @@ public class Router {
   private void processAttach(String processIP, short processPort,
                              String simulatedIP, short weight) {
 
+      // check if it tries to attach itself
+      if (rd.simulatedIPAddress.equals(simulatedIP)) {
+          System.err.println("Attaching to yourself is not allowed!");
+          return;
+      }
+
+      // check if the target router has already been attached
+      for (int i=0; i<4; i++) {
+          if (null != ports[i] && ports[i].router2.simulatedIPAddress.equals(simulatedIP)) {
+              System.err.println("This router has already been attached by yourself!");
+              return;
+          }
+      }
+
+      // create a RouterDescription for the remote router
+      RouterDescription remote_rd = new RouterDescription(processIP, processPort, simulatedIP);
+      // create a link of these two routers
+      Link link = new Link(rd, remote_rd);
+      // put it into ports[]
+      for (int i=0; i<4; i++) {
+          if (null == ports[i]) {
+              ports[i] = link;
+              System.out.println("Link is established between " + rd.simulatedIPAddress
+                      + " and " + remote_rd.simulatedIPAddress + ".");
+              return;
+          }
+      }
+      // no more free port
+      System.err.println("All ports are occupied, link cannot be established.");
   }
 
   /**
@@ -69,7 +98,7 @@ public class Router {
 
   /**
    * attach the link to the remote router, which is identified by the given simulated ip;
-   * to establish the connection via socket, you need to indentify the process IP and process Port;
+   * to establish the connection via socket, you need to identify the process IP and process Port;
    * additionally, weight is the cost to transmitting data through the link
    * <p/>
    * This command does trigger the link database synchronization
