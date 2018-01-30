@@ -128,7 +128,10 @@ public class Router {
                   System.out.println("set " + received.srcIP + " state to TWO_WAY;");
 
               }
-              else {}
+              else {
+                  // TODO: ERROR IN RECEIVED Packet (probably will never happen!)
+                  System.err.println("Error in received packet!");
+              }
               out.writeObject(packet);
               clientSocket.close();
               in.close();
@@ -167,6 +170,8 @@ public class Router {
               System.out.println(l.router2.simulatedIPAddress);
           }
       }
+      if (i == 1)
+          System.err.println("No neighbors on this router!");
   }
 
   /**

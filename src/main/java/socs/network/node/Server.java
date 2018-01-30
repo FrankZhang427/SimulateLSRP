@@ -84,7 +84,7 @@ public class Server implements Runnable{
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 try {
                     SOSPFPacket received = (SOSPFPacket) in.readObject();
-                    System.out.println(""); // TODO: DELETE THIS LINE
+                    System.out.println("");
                     if (received.sospfType == 0) {
                         System.out.println("received HELLO from " + received.srcIP + ";");
 
@@ -128,7 +128,8 @@ public class Server implements Runnable{
                             System.out.print(">> ");
                         }
                         else {
-                            // TODO: LSAUPDATE?
+                            // TODO: Expecting another HELLO!
+                            System.err.println("Error in received packet!");
                         }
 
                     } else {
