@@ -160,7 +160,13 @@ public class Router {
    * output the neighbors of the routers
    */
   private void processNeighbors() {
-
+      int i = 1;
+      for (Link l : ports) {
+          if (null != l) {
+              System.out.println("IP Address of the neighbor" + i++);
+              System.out.println(l.router2.simulatedIPAddress);
+          }
+      }
   }
 
   /**

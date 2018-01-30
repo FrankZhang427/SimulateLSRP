@@ -125,7 +125,7 @@ public class Server implements Runnable{
                             System.out.println("received HELLO from " + received.srcIP + ";");
                             router.ports[i].router2.status = RouterStatus.TWO_WAY;
                             System.out.println("set " + received.srcIP + " state to TWO_WAY;");
-                            System.out.print(">>");
+                            System.out.print(">> ");
                         }
                         else {
                             // TODO: LSAUPDATE?
