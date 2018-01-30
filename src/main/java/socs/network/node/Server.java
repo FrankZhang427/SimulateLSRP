@@ -84,7 +84,7 @@ public class Server implements Runnable{
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 try {
                     SOSPFPacket received = (SOSPFPacket) in.readObject();
-                    System.out.println("Received"); // TODO: DELETE THIS LINE
+                    System.out.println(""); // TODO: DELETE THIS LINE
                     if (received.sospfType == 0) {
                         System.out.println("received HELLO from " + received.srcIP + ";");
 
@@ -122,8 +122,10 @@ public class Server implements Runnable{
                         out.writeObject(sent);
                         received = (SOSPFPacket) in.readObject();
                         if (received.sospfType == 0) {
+                            System.out.println("received HELLO from " + received.srcIP + ";");
                             router.ports[i].router2.status = RouterStatus.TWO_WAY;
                             System.out.println("set " + received.srcIP + " state to TWO_WAY;");
+                            System.out.print(">>");
                         }
                         else {
                             // TODO: LSAUPDATE?

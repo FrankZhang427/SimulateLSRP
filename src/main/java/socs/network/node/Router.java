@@ -30,7 +30,8 @@ public class Router {
       InetAddress IP;
       try {
           IP = InetAddress.getLocalHost();
-          rd.processIPAddress = IP.getHostAddress();
+          rd.processIPAddress = IP.getHostAddress(); // TODO: change to "localhost" works with the socket
+          rd.processIPAddress = "localhost";
       } catch (UnknownHostException e) {
           System.err.println("Unknown Host, Router exit");
           System.exit(-1);
@@ -82,7 +83,7 @@ public class Router {
       // check if the target router has already been attached
       for (int i=0; i<4; i++) {
           if (null != ports[i] && ports[i].router2.simulatedIPAddress.equals(simulatedIP)) {
-              System.err.println("This router has already been attached by yourself!");
+              System.err.println("This router has already been attached!");
               return;
           }
       }
@@ -116,12 +117,10 @@ public class Router {
                   "", "", null);
           try {
               Socket clientSocket = new Socket(l.router2.processIPAddress, l.router2.processPortNumber);
-              System.out.println("Connected"); // TODO: DELETE THIS LINE
-              ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
               ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
 
               out.writeObject(packet);
-              System.out.println("Sent"); // TODO: DELETE THIS LINE
+              ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
               SOSPFPacket received = (SOSPFPacket) in.readObject();
               if (received.sospfType == 0){
                   System.out.println("received HELLO from " + received.srcIP + ";");
@@ -130,6 +129,7 @@ public class Router {
 
               }
               else {}
+              out.writeObject(packet);
               clientSocket.close();
               in.close();
               out.close();
