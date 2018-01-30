@@ -21,7 +21,6 @@ public class Router {
     lsd = new LinkStateDatabase(rd);
     server = new Server(rd.processPortNumber, this);
     new Thread(server).start();
-
   }
 
   /**

@@ -22,6 +22,7 @@ public class Server implements Runnable{
     public void turn_off() {
         this.on = false;
     }
+
     public void run() {
         while (on) {
             try {
@@ -33,7 +34,16 @@ public class Server implements Runnable{
                     System.out.println("Fail to accept");
             }
         }
+
+        try {
+            serverSocket.close();
+            System.out.println("Server Stopped");
+        } catch (IOException ioe) {
+            System.out.println("Error Found stopping server socket");
+            System.exit(-1);
+        }
     }
+
     class ClientThread extends Thread {
         private Socket clientSocket;
         private ObjectInputStream in;
