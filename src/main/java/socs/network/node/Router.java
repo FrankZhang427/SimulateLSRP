@@ -20,6 +20,9 @@ public class Router {
   public Router(Configuration config) {
     rd.simulatedIPAddress = config.getString("socs.network.router.ip");
     lsd = new LinkStateDatabase(rd);
+    // TODO: ADD process IP and port to rd
+    rd.processIPAddress = "localhost";
+    rd.processPortNumber = 5000;
     server = new Server(rd.processPortNumber, this);
     new Thread(server).start();
   }

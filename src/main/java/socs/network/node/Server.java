@@ -1,5 +1,7 @@
 package socs.network.node;
 
+import socs.network.message.SOSPFPacket;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -81,8 +83,12 @@ public class Server implements Runnable{
             try {
                 in = new ObjectInputStream(clientSocket.getInputStream());
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
-                while (true) {
-                    // TODO: ADD CODE HERE
+                try {
+                    Object input = in.readObject();
+                    
+
+                } catch (ClassNotFoundException cnfe) {
+                    System.out.println("Object class not found");
                 }
             } catch (IOException ioe) {
                 System.out.println("client socket streaming failed");
