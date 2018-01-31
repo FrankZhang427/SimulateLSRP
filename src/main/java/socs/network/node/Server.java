@@ -85,6 +85,7 @@ public class Server implements Runnable{
                 try {
                     SOSPFPacket received = (SOSPFPacket) in.readObject();
                     System.out.println("");
+                    // hello packet
                     if (received.sospfType == 0) {
                         System.out.println("received HELLO from " + received.srcIP + ";");
 
@@ -135,6 +136,8 @@ public class Server implements Runnable{
                     } else {
                         // TODO: LSAUPDATE?
                     }
+                    in.close();
+                    out.close();
                 } catch (ClassNotFoundException cnfe) {
                     System.out.println("Object class not found");
                 }

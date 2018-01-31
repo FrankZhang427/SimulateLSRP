@@ -22,6 +22,10 @@ public class Router {
 
   // Server instance for socket programming
   private Server server;
+
+  // Client socket array, 4 ports 4 sockets
+  private Socket[] clientSocket = new Socket[4];
+
   public Router(Configuration config, char n) {
 
       rd.simulatedIPAddress = config.getString("socs.network.router.ip");
@@ -110,30 +114,31 @@ public class Router {
    */
   private void processStart() {
 
-      for (Link l : ports) {
-          if (null == l) continue;
-          SOSPFPacket packet = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
-                  l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 0,
+      for (int i=0; i<4; i++) {
+          if (null == ports[i]) continue;
+          // create a hello packet
+          SOSPFPacket packet = new SOSPFPacket(ports[i].router1.processIPAddress, ports[i].router1.processPortNumber,
+                  ports[i].router1.simulatedIPAddress, ports[i].router2.simulatedIPAddress, (short) 0,
                   "", "", null);
           try {
-              Socket clientSocket = new Socket(l.router2.processIPAddress, l.router2.processPortNumber);
-              ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
-
+              // create a client socket
+              clientSocket[i] = new Socket(ports[i].router2.processIPAddress, ports[i].router2.processPortNumber);
+              ObjectOutputStream out = new ObjectOutputStream(clientSocket[i].getOutputStream());
+              // send first hello packet
               out.writeObject(packet);
-              ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+              ObjectInputStream in = new ObjectInputStream(clientSocket[i].getInputStream());
+              // blocking operation
               SOSPFPacket received = (SOSPFPacket) in.readObject();
               if (received.sospfType == 0){
                   System.out.println("received HELLO from " + received.srcIP + ";");
-                  l.router2.status = RouterStatus.TWO_WAY;
+                  ports[i].router2.status = RouterStatus.TWO_WAY;
                   System.out.println("set " + received.srcIP + " state to TWO_WAY;");
-
               }
               else {
-                  // TODO: ERROR IN RECEIVED Packet (probably will never happen!)
                   System.err.println("Error in received packet!");
               }
+              // send second hello packet
               out.writeObject(packet);
-              clientSocket.close();
               in.close();
               out.close();
           } catch (Exception e){
