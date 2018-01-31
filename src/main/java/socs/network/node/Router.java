@@ -41,6 +41,7 @@ public class Router {
       rd.processPortNumber = (short)(7000 + n - 49);
       System.out.println("Host name of Router "+(n-48)+ " : "+rd.processIPAddress);
       System.out.println("Port number of Router "+(n-48)+ " : "+rd.processPortNumber);
+      lsd = new LinkStateDatabase(rd);
       server = new Server(this);
       new Thread(server).start();
   }
