@@ -8,8 +8,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import socs.network.node.RouterStatus;
-
 
 public class Router {
 
@@ -170,13 +168,13 @@ public class Router {
   private void processNeighbors() {
       int i = 1;
       for (Link l : ports) {
-          if (null != l) {
+          if (null != l && l.router2.status == RouterStatus.TWO_WAY) {
               System.out.println("IP Address of the neighbor" + i++);
               System.out.println(l.router2.simulatedIPAddress);
           }
       }
       if (i == 1)
-          System.err.println("No neighbors on this router!");
+          System.out.println("No neighbors on this router!");
   }
 
   /**
