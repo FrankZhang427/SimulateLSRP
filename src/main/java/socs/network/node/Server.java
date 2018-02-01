@@ -105,7 +105,7 @@ public class Server implements Runnable{
                         // put it into ports[]
                         int i;
                         for (i=0; i<4; i++) {
-                            if (null == router.ports[i]) {
+                            if (null == router.ports[i] || router.ports[i].router2.simulatedIPAddress.equals(received.srcIP)) {
                                 router.ports[i] = link;
                                 router.ports[i].router2.status = RouterStatus.INIT;
                                 break;
