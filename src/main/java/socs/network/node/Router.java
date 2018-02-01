@@ -115,6 +115,8 @@ public class Router {
 
       for (int i=0; i<4; i++) {
           if (null == ports[i]) continue;
+          // enough already neighbors, no need to send hello again
+          if (ports[i].router2.status == RouterStatus.TWO_WAY) continue;
           // create a hello packet
           SOSPFPacket packet = new SOSPFPacket(ports[i].router1.processIPAddress, ports[i].router1.processPortNumber,
                   ports[i].router1.simulatedIPAddress, ports[i].router2.simulatedIPAddress, (short) 0,
@@ -227,5 +229,4 @@ public class Router {
       e.printStackTrace();
     }
   }
-
 }
