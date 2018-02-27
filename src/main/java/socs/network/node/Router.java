@@ -116,7 +116,7 @@ public class Router {
      * conduct the LSAUPDATE and send LSPs
      * @param clientSocket
      */
-  private void lsaUpdate(Socket clientSocket) {
+  public void lsaUpdate(Socket clientSocket) {
       // create link description for this new link
       LinkDescription ld = new LinkDescription();
       ld.linkID = rd.simulatedIPAddress;
