@@ -128,13 +128,17 @@ public class Server implements Runnable{
                             System.out.println("set " + received.srcIP + " state to TWO_WAY;");
                             System.out.print(">> ");
                         }
+                        // TODO 1. create linkDescription for the new link
+                        // TODO 2. add this new link to the LSA, which originated at the server end
+                        // TODO 3. then share the LSP with all neighbors
                         else {
                             // TODO: Expecting another HELLO!
                             System.err.println("Error in received packet!");
                         }
 
                     } else {
-                        // TODO: LSAUPDATE?
+                        // TODO 1. update LSA with linkStateID or lsaSeqNumber
+                        // TODO 2. send LSP to neighbors except the clients which sends the LSP
                     }
                     in.close();
                     out.close();

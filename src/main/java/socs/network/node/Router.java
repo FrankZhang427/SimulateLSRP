@@ -1,13 +1,16 @@
 package socs.network.node;
 
+import socs.network.message.LinkDescription;
 import socs.network.message.SOSPFPacket;
+import socs.network.message.LSA;
 import socs.network.util.Configuration;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-
+import java.util.Vector;
+import java.util.Iterator;
 
 public class Router {
 
@@ -108,6 +111,50 @@ public class Router {
       System.err.println("All ports are occupied, link cannot be established.");
   }
 
+
+    /**
+     * conduct the LSAUPDATE and send LSPs
+     * @param clientSocket
+     */
+  private void lsaUpdate(Socket clientSocket) {
+      // create link description for this new link
+      LinkDescription ld = new LinkDescription();
+      ld.linkID = rd.simulatedIPAddress;
+      ld.portNum = rd.processPortNumber;
+      ld.tosMetrics = 0;
+
+      // add this new link to the LSA
+      LSA lsa = lsd._store.get(rd.simulatedIPAddress);
+      lsa.links.add(ld);
+      lsa.lsaSeqNumber++;
+
+      // create lsa array
+      Vector<LSA> lsaArray = new Vector<LSA>();
+      Iterator it = lsd._store.entrySet().iterator();
+
+      while (it.hasNext()) {
+          lsaArray.add((LSA)it.next());
+      }
+
+      // share the LSP with all neighbors
+      try {
+          ObjectOutputStream outStream = new ObjectOutputStream(clientSocket.getOutputStream());
+          for (Link l : ports) {
+              if (null != l && l.router2.status == RouterStatus.TWO_WAY) {
+                  SOSPFPacket lsp = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
+                          l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 1, "", "",
+                          lsaArray);
+                  // send LSP
+                  outStream.writeObject(lsp);
+              }
+          }
+          outStream.close();
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+  }
+
+
   /**
    * broadcast Hello to neighbors
    */
@@ -142,6 +189,9 @@ public class Router {
               out.writeObject(packet);
               in.close();
               out.close();
+              //TODO: lsaUpdate
+              lsaUpdate(clientSocket[i]);
+
           } catch (Exception e){
               if (e instanceof IOException)
                   System.err.println("Port cannot be used");

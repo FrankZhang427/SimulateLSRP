@@ -39,7 +39,6 @@ public class LinkStateDatabase {
     return lsa;
   }
 
-
   public String toString() {
     StringBuilder sb = new StringBuilder();
     for (LSA lsa: _store.values()) {
