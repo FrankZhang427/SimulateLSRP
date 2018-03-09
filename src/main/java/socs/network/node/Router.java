@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.Iterator;
+import java.util.Map;
 
 public class Router {
 
@@ -97,7 +98,7 @@ public class Router {
       // create a RouterDescription for the remote router
       RouterDescription remote_rd = new RouterDescription(processIP, processPort, simulatedIP);
       // create a link of these two routers
-      Link link = new Link(rd, remote_rd);
+      Link link = new Link(rd, remote_rd, weight);
       // put it into ports[]
       for (int i=0; i<4; i++) {
           if (null == ports[i]) {
@@ -116,12 +117,12 @@ public class Router {
      * conduct the LSAUPDATE and send LSPs
      * @param clientSocket
      */
-  public void lsaUpdate(Socket clientSocket) {
+  public void lsaUpdate(Socket clientSocket, short weight) {
       // create link description for this new link
       LinkDescription ld = new LinkDescription();
       ld.linkID = rd.simulatedIPAddress;
       ld.portNum = rd.processPortNumber;
-      ld.tosMetrics = 0;
+      ld.tosMetrics = weight;
 
       // add this new link to the LSA
       LSA lsa = lsd._store.get(rd.simulatedIPAddress);
@@ -133,7 +134,8 @@ public class Router {
       Iterator it = lsd._store.entrySet().iterator();
 
       while (it.hasNext()) {
-          lsaArray.add((LSA)it.next());
+          Map.Entry pair = (Map.Entry)it.next();
+          lsaArray.add((LSA) pair.getValue());
       }
 
       // share the LSP with all neighbors
@@ -143,7 +145,7 @@ public class Router {
               if (null != l && l.router2.status == RouterStatus.TWO_WAY) {
                   SOSPFPacket lsp = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
                           l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 1, "", "",
-                          lsaArray);
+                          lsaArray, l.weight);
                   // send LSP
                   outStream.writeObject(lsp);
               }
@@ -167,7 +169,7 @@ public class Router {
           // create a hello packet
           SOSPFPacket packet = new SOSPFPacket(ports[i].router1.processIPAddress, ports[i].router1.processPortNumber,
                   ports[i].router1.simulatedIPAddress, ports[i].router2.simulatedIPAddress, (short) 0,
-                  "", "", null);
+                  "", "", null, ports[i].weight);
           try {
               // create a client socket
               clientSocket[i] = new Socket(ports[i].router2.processIPAddress, ports[i].router2.processPortNumber);
@@ -190,7 +192,7 @@ public class Router {
               in.close();
               out.close();
               //TODO: lsaUpdate
-              lsaUpdate(clientSocket[i]);
+              lsaUpdate(clientSocket[i], ports[i].weight);
 
           } catch (Exception e){
               if (e instanceof IOException)

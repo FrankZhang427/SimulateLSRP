@@ -101,7 +101,7 @@ public class Server implements Runnable{
                         RouterDescription remote_rd = new RouterDescription(received.srcProcessIP,
                                 received.srcProcessPort, received.srcIP);
                         // create a link of these two routers
-                        Link link = new Link(router.rd, remote_rd);
+                        Link link = new Link(router.rd, remote_rd, received.weight);
                         // put it into ports[]
                         int i;
                         for (i=0; i<4; i++) {
@@ -119,7 +119,7 @@ public class Server implements Runnable{
                         System.out.println("set " + received.srcIP + " state to INIT;");
                         SOSPFPacket sent = new SOSPFPacket(router.rd.processIPAddress, router.rd.processPortNumber,
                                 router.rd.simulatedIPAddress, received.srcIP, (short) 0,
-                                "", "", null);
+                                "", "", null, received.weight);
                         out.writeObject(sent);
                         received = (SOSPFPacket) in.readObject();
                         if (received.sospfType == 0) {
@@ -135,7 +135,7 @@ public class Server implements Runnable{
                         // 1. create linkDescription for the new link
                         // 2. add this new link to the LSA, which originated at the server end
                         // 3. then share the LSP with all neighbors
-                        router.lsaUpdate(clientSocket);
+                        router.lsaUpdate(clientSocket, received.weight);
 
                     } else {
                         // TODO 1. update LSA with linkStateID or lsaSeqNumber
