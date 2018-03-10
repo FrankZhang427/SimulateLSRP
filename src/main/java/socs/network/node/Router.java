@@ -112,16 +112,63 @@ public class Router {
       System.err.println("All ports are occupied, link cannot be established.");
   }
 
+    /**
+     * Forward lsp to neighbors except the sender
+     * @param received
+     */
+    public void forwardLSP(SOSPFPacket received) {
+        for (Link l : ports) {
+            if (null != l && l.router2.status == RouterStatus.TWO_WAY && !l.router2.simulatedIPAddress.equals(received.srcIP)) {
+                SOSPFPacket lsp = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
+                        l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 1, "", "",
+                        received.lsaArray, l.weight);
+                try {
+                    Socket clientSocket = new Socket(l.router2.processIPAddress, l.router2.processPortNumber);
+                    ObjectOutputStream outStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                    outStream.writeObject(lsp);
+                    outStream.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.out.println("LSPs are forwarded to neighbors.");
+    }
 
     /**
-     * conduct the LSAUPDATE and send LSPs
-     * @param clientSocket
+     * broadcast lsp
+     * @param lsaArray
      */
-  public void lsaUpdate(Socket clientSocket, short weight) {
+  public void broadcastLSP(Vector<LSA> lsaArray) {
+      for (Link l : ports) {
+          if (null != l && l.router2.status == RouterStatus.TWO_WAY) {
+              SOSPFPacket lsp = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
+                      l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 1, "", "",
+                      lsaArray, l.weight);
+              try {
+                  Socket clientSocket = new Socket(l.router2.processIPAddress, l.router2.processPortNumber);
+                  ObjectOutputStream outStream = new ObjectOutputStream(clientSocket.getOutputStream());
+                  outStream.writeObject(lsp);
+                  outStream.close();
+              } catch (Exception e) {
+                  e.printStackTrace();
+              }
+          }
+      }
+      System.out.println("LSPs are broadcast to neighbors.");
+  }
+
+    /**
+     * conduct the LSAUPDATE and broadcast LSPs
+     * @param remoteLinkID
+     * @param remotePortNum
+     * @param weight
+     */
+  public void lsaUpdate(String remoteLinkID, short remotePortNum, short weight) {
       // create link description for this new link
       LinkDescription ld = new LinkDescription();
-      ld.linkID = rd.simulatedIPAddress;
-      ld.portNum = rd.processPortNumber;
+      ld.linkID = remoteLinkID;
+      ld.portNum = remotePortNum;
       ld.tosMetrics = weight;
 
       // add this new link to the LSA
@@ -131,6 +178,7 @@ public class Router {
 
       // create lsa array
       Vector<LSA> lsaArray = new Vector<LSA>();
+      //lsaArray.add(lsa);
       Iterator it = lsd._store.entrySet().iterator();
 
       while (it.hasNext()) {
@@ -139,21 +187,7 @@ public class Router {
       }
 
       // share the LSP with all neighbors
-      try {
-          ObjectOutputStream outStream = new ObjectOutputStream(clientSocket.getOutputStream());
-          for (Link l : ports) {
-              if (null != l && l.router2.status == RouterStatus.TWO_WAY) {
-                  SOSPFPacket lsp = new SOSPFPacket(l.router1.processIPAddress, l.router1.processPortNumber,
-                          l.router1.simulatedIPAddress, l.router2.simulatedIPAddress, (short) 1, "", "",
-                          lsaArray, l.weight);
-                  // send LSP
-                  outStream.writeObject(lsp);
-              }
-          }
-          outStream.close();
-      } catch (Exception e) {
-          e.printStackTrace();
-      }
+      broadcastLSP(lsaArray);
   }
 
 
@@ -189,11 +223,12 @@ public class Router {
               }
               // send second hello packet
               out.writeObject(packet);
+
+              // lsaUpdate
+              lsaUpdate(ports[i].router2.simulatedIPAddress, ports[i].router2.processPortNumber, ports[i].weight);
+
               in.close();
               out.close();
-              //TODO: lsaUpdate
-              lsaUpdate(clientSocket[i], ports[i].weight);
-
           } catch (Exception e){
               if (e instanceof IOException)
                   System.err.println("Port cannot be used");
@@ -266,8 +301,11 @@ public class Router {
           processConnect(cmdLine[1], Short.parseShort(cmdLine[2]),
                   cmdLine[3], Short.parseShort(cmdLine[4]));
         } else if (command.equals("neighbors")) {
-          //output neighbors
-          processNeighbors();
+            //output neighbors
+            processNeighbors();
+        } else if (command.equals("showlsd")) {
+            // show lsd
+            System.out.println(lsd.toString());
         } else {
           //invalid command
           break;

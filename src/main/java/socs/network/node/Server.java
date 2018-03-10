@@ -1,10 +1,13 @@
 package socs.network.node;
 
+import socs.network.message.LSA;
 import socs.network.message.SOSPFPacket;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Iterator;
+import java.util.Vector;
 
 /**
  * Implementation of a runnable server class for socket programming
@@ -74,6 +77,8 @@ public class Server implements Runnable{
             clientSocket = s;
         }
 
+
+
         /**
          * Method invoked by Thread.start()
          */
@@ -135,11 +140,32 @@ public class Server implements Runnable{
                         // 1. create linkDescription for the new link
                         // 2. add this new link to the LSA, which originated at the server end
                         // 3. then share the LSP with all neighbors
-                        router.lsaUpdate(clientSocket, received.weight);
+                        router.lsaUpdate(received.srcIP, received.srcProcessPort, received.weight);
 
-                    } else {
-                        // TODO 1. update LSA with linkStateID or lsaSeqNumber
-                        // TODO 2. send LSP to neighbors except the clients which sends the LSP
+                    } else if (received.sospfType == 1) {
+                        // LSP
+                        System.out.println("received LSP from " + received.srcIP + ";");
+
+                        // 1. update LSA with linkStateID or lsaSeqNumber
+                        // 2. send LSP to neighbors except the clients which sends the LSP
+
+                        Vector<LSA> lsaArray = received.lsaArray;
+                        // Obtaining an iterator
+                        Iterator it = lsaArray.iterator();
+
+                        while (it.hasNext()) {
+                            LSA lsa = (LSA) it.next();
+                            if (router.lsd._store.containsKey(lsa.linkStateID)) {
+                                if (lsa.lsaSeqNumber > router.lsd._store.get(lsa.linkStateID).lsaSeqNumber) {
+                                    router.lsd._store.put(lsa.linkStateID, lsa);
+                                    System.out.println("LSA of " + lsa.linkStateID + " has been updated.");
+                                    router.forwardLSP(received);
+                                }
+                            } else {
+                                router.lsd._store.put(lsa.linkStateID, lsa);
+                                router.forwardLSP(received);
+                            }
+                        }
                     }
                     in.close();
                     out.close();
