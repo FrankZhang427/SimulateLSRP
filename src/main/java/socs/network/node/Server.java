@@ -131,7 +131,6 @@ public class Server implements Runnable{
                             System.out.println("received HELLO from " + received.srcIP + ";");
                             router.ports[i].router2.status = RouterStatus.TWO_WAY;
                             System.out.println("set " + received.srcIP + " state to TWO_WAY;");
-                            System.out.print(">> ");
                         } else {
                             // TODO: Expecting another HELLO!
                             System.err.println("Error in received packet!");
@@ -167,6 +166,7 @@ public class Server implements Runnable{
                             }
                         }
                     }
+                    System.out.print(">> ");
                     in.close();
                     out.close();
                 } catch (ClassNotFoundException cnfe) {

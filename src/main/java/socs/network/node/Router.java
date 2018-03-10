@@ -58,7 +58,7 @@ public class Router {
    * @param destinationIP the ip address of the destination simulated router
    */
   private void processDetect(String destinationIP) {
-
+    System.out.println(lsd.getShortestPath(destinationIP));
   }
 
   /**

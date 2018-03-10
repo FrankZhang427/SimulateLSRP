@@ -9,10 +9,14 @@ public class WeightedGraph {
     int n;
     short[][] edges;
     String[] myID;
+    LSA[] myLSA;
+
     public WeightedGraph(LinkStateDatabase lsd) {
         n = lsd._store.size();
         edges = new short[n][n];
         myID = new String[n];
+        myLSA = new LSA[n];
+        clear();
         init(lsd);
     }
 
@@ -26,13 +30,11 @@ public class WeightedGraph {
         for (int i = 0;it.hasNext(); i++) {
             Map.Entry pair = (Map.Entry)it.next();
             myID[i] = (String) pair.getKey();
-            it.remove();
+            myLSA[i] = (LSA) pair.getValue();
         }
 
         for (int i = 0; i < myID.length; i++) {
-            String key = myID[i];
-            LSA lsa = lsd._store.get(key);
-            for (LinkDescription ld : lsa.links) {
+            for (LinkDescription ld : myLSA[i].links) {
                 int j = find(ld.linkID);
                 if (j == -1) continue;
                 else edges[i][j] = ld.tosMetrics;
@@ -40,10 +42,27 @@ public class WeightedGraph {
         }
     }
 
-    private int find(String IP) {
+    /**
+     * Find the index of IP in myID
+     * @param IP
+     * @return
+     */
+    public int find(String IP) {
         for (int i = 0; i < myID.length; i++) {
             if (myID[i].equals(IP)) return i;
         }
         return -1;
+    }
+
+    /**
+     * clear edges and myID
+     */
+    private void clear() {
+        for (int i = 0; i < n; i++) {
+            myID[i] = "";
+            for (int j = 0; j < n; j++){
+                edges[i][j] = -1;
+            }
+        }
     }
 }
