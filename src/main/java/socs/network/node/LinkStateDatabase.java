@@ -41,9 +41,9 @@ public class LinkStateDatabase {
 
     while (unsettled.size() > 0) {
       String node = getMinimum(unsettled);
-      settled.add(node);
       unsettled.remove(node);
       findMinimalDistance(node);
+      settled.add(node);
     }
 
     return getPath(destinationIP);
