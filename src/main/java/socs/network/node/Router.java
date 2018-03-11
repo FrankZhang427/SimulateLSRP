@@ -58,7 +58,8 @@ public class Router {
    * @param destinationIP the ip address of the destination simulated router
    */
   private void processDetect(String destinationIP) {
-    System.out.println(lsd.getShortestPath(destinationIP));
+    if (destinationIP.equals(rd.simulatedIPAddress)) System.out.println("Please detect other routers!");
+    else System.out.println(lsd.getShortestPath(destinationIP));
   }
 
   /**

@@ -12,6 +12,7 @@ public class LinkStateDatabase {
 
   private RouterDescription rd = null;
 
+  // Weighted graph used to compute shortest path
   private WeightedGraph wg;
   private HashSet<String> settled;
   private HashSet<String> unsettled;
@@ -49,6 +50,11 @@ public class LinkStateDatabase {
     return getPath(destinationIP);
   }
 
+  /**
+   * Find the shorter distance node in the neighbors of given node
+   * and add it to predecessors and unsettled set
+   * @param node
+   */
   private void findMinimalDistance(String node) {
     List<String> neighbors = getNeighbors(node);
     for (String s : neighbors) {
@@ -60,6 +66,11 @@ public class LinkStateDatabase {
     }
   }
 
+  /**
+   * Find all neighbors that is not settled
+   * @param node
+   * @return
+   */
   private List<String> getNeighbors(String node) {
     List<String> neighbors = new ArrayList<String>();
     int index = wg.find(node);
@@ -69,6 +80,11 @@ public class LinkStateDatabase {
     return neighbors;
   }
 
+  /**
+   * Get closest node in unsettled set
+   * @param unsettled
+   * @return
+   */
   private String getMinimum(HashSet<String> unsettled) {
     String minimum = null;
     for (String s : unsettled) {
@@ -82,12 +98,22 @@ public class LinkStateDatabase {
     return minimum;
   }
 
+  /**
+   * Get distance from distance matrix
+   * @param destination
+   * @return
+   */
   private int getShortestDistance(String destination) {
     Integer d = distance.get(destination);
     if (d == null) return Integer.MAX_VALUE;
     else return d;
   }
 
+  /**
+   * Get path to a given destination in required format
+   * @param destination
+   * @return
+   */
   private String getPath(String destination) {
     String current = destination;
     String result = "";
