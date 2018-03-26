@@ -150,6 +150,7 @@ public class Router {
       }
       // no more free port
       System.err.println("All ports are occupied, link cannot be established.");
+      return;
   }
 
     /**
@@ -289,7 +290,84 @@ public class Router {
    */
   private void processConnect(String processIP, short processPort,
                               String simulatedIP, short weight) {
+      int i = -1;
+      // check if it tries to attach itself
+      if (rd.simulatedIPAddress.equals(simulatedIP)) {
+          System.err.println("Attaching to yourself is not allowed!");
+          return;
+      }
+      int j = -1;
+      // check if the target router has already been attached
+      for (j=0; j<4; j++) {
+          if (null != ports[j] && ports[j].router2.simulatedIPAddress.equals(simulatedIP)) {
+              System.err.println("This router has already been attached!");
+              return;
+          }
+      }
 
+      // create a RouterDescription for the remote router
+      RouterDescription remote_rd = new RouterDescription(processIP, processPort, simulatedIP);
+      // create a link of these two routers
+      Link link = new Link(rd, remote_rd, weight);
+      // put it into ports[]
+      for (j=0; j<4; j++) {
+          if (null == ports[j]) {
+              ports[j] = link;
+              System.out.println("Link is established between " + rd.simulatedIPAddress
+                      + " and " + remote_rd.simulatedIPAddress + ".");
+              i = j;
+              break;
+          }
+      }
+      // no more free port
+      if (j == 4) {
+          System.err.println("All ports are occupied, link cannot be established.");
+          return;
+      }
+      if ( i == -1) {
+          System.err.println("Fail to connect!");
+          return;
+      }
+      System.out.println("Attached");
+      // if already neighbors, no need to send hello again
+//      if (ports[i].router2.status == RouterStatus.TWO_WAY) return;
+      // create a hello packet
+      SOSPFPacket packet = new SOSPFPacket(ports[i].router1.processIPAddress, ports[i].router1.processPortNumber,
+              ports[i].router1.simulatedIPAddress, ports[i].router2.simulatedIPAddress, (short) 0,
+              "", "", null, ports[i].weight);
+      try {
+          // create a client socket
+          clientSocket[i] = new Socket(ports[i].router2.processIPAddress, ports[i].router2.processPortNumber);
+          ObjectOutputStream out = new ObjectOutputStream(clientSocket[i].getOutputStream());
+          // send first hello packet
+          out.writeObject(packet);
+          ObjectInputStream in = new ObjectInputStream(clientSocket[i].getInputStream());
+          // blocking operation
+          SOSPFPacket received = (SOSPFPacket) in.readObject();
+          if (received.sospfType == 0){
+              System.out.println("received HELLO from " + received.srcIP + ";");
+              ports[i].router2.status = RouterStatus.TWO_WAY;
+              System.out.println("set " + received.srcIP + " state to TWO_WAY;");
+          }
+          else {
+              System.err.println("Error in received packet!");
+          }
+          // send second hello packet
+          out.writeObject(packet);
+
+          // lsaUpdate
+          lsaUpdate(ports[i].router2.simulatedIPAddress, ports[i].router2.processPortNumber, ports[i].weight);
+
+          in.close();
+          out.close();
+      } catch (Exception e){
+          if (e instanceof IOException)
+              System.err.println("Port cannot be used");
+          else if (e instanceof ClassNotFoundException)
+              System.err.println("In stream object class not found");
+          else
+              System.err.println(e.getMessage());
+      }
   }
 
   /**
@@ -330,13 +408,14 @@ public class Router {
           processDisconnect(Short.parseShort(cmdLine[1]));
         } else if (command.startsWith("quit")) {
           processQuit();
+          break;
         } else if (command.startsWith("attach ")) {
           String[] cmdLine = command.split(" ");
           processAttach(cmdLine[1], Short.parseShort(cmdLine[2]),
                   cmdLine[3], Short.parseShort(cmdLine[4]));
         } else if (command.equals("start")) {
           processStart();
-        } else if (command.equals("connect ")) {
+        } else if (command.startsWith("connect ")) {
           String[] cmdLine = command.split(" ");
           processConnect(cmdLine[1], Short.parseShort(cmdLine[2]),
                   cmdLine[3], Short.parseShort(cmdLine[4]));
@@ -348,7 +427,7 @@ public class Router {
             System.out.println(lsd.toString());
         } else {
           //invalid command
-          break;
+          System.err.println("Invalid command, please enter again!");
         }
         System.out.print(">> ");
         command = br.readLine();
