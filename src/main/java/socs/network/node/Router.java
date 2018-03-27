@@ -69,45 +69,67 @@ public class Router {
    * @param portNumber the port number which the link attaches at
    */
   private void processDisconnect(short portNumber) {
-      if (portNumber >= 0 && portNumber <= 3 && null != ports[portNumber]) {
-          Link link = ports[portNumber];
 
-          // update LSA of remote router
-          String remoteIP = link.router2.simulatedIPAddress;
-          LSA remoteLSA = lsd._store.get(remoteIP);
-          remoteLSA.lsaSeqNumber++;
-          for (LinkDescription ld : remoteLSA.links) {
-              if (ld.linkID.equals(rd.simulatedIPAddress)) {
-                  remoteLSA.links.remove(ld);
-              }
+      Link link = null;
+      int portIndex = -1; // port index
+
+      // find link with the desired processPortNumber
+      for (int i=0; i<ports.length; i++) {
+          if (ports[i] != null && ports[i].router2.processPortNumber == portNumber) {
+              link = ports[i];
+              portIndex = i;
+              break;
           }
+      }
 
-          // update LSA of local router
-          LSA localLSA = lsd._store.get(rd.simulatedIPAddress);
-          localLSA.lsaSeqNumber++;
-          for (LinkDescription ld : localLSA.links) {
-              if (ld.linkID.equals(remoteIP)) {
-                  localLSA.links.remove(ld);
-              }
+      if (null == link && portIndex == -1) {
+          System.out.println("processPortNumber " + portNumber + " does not exist.");
+          return;
+      }
+      
+      // update LSA of remote router
+      String remoteIP = link.router2.simulatedIPAddress;
+      LSA remoteLSA = lsd._store.get(remoteIP);
+      remoteLSA.lsaSeqNumber++;
+      for (LinkDescription ld : remoteLSA.links) {
+          if (ld.linkID.equals(rd.simulatedIPAddress)) {
+              remoteLSA.links.remove(ld);
           }
+      }
 
-          // delete link in ports[]
-          System.out.println("Link to " + ports[portNumber].router2.simulatedIPAddress + " is disconnected.");
-          ports[portNumber] = null;
-
-          // create lsa array
-          Vector<LSA> lsaArray = new Vector<LSA>();
-          Iterator it = lsd._store.entrySet().iterator();
-
-          while (it.hasNext()) {
-              Map.Entry pair = (Map.Entry) it.next();
-              lsaArray.add((LSA) pair.getValue());
+      // update LSA of local router
+      LSA localLSA = lsd._store.get(rd.simulatedIPAddress);
+      localLSA.lsaSeqNumber++;
+      for (LinkDescription ld : localLSA.links) {
+          if (ld.linkID.equals(remoteIP)) {
+              localLSA.links.remove(ld);
           }
+      }
 
-          // share the LSP with all neighbors
-          broadcastLSP(lsaArray);
-      } else {
-          System.out.println("Link does not exist.");
+      // delete link in ports[]
+      System.out.println(link.router2.simulatedIPAddress + " is disconnected.");
+      ports[portIndex] = null;
+
+      // create lsa array
+      Vector<LSA> lsaArray = new Vector<LSA>();
+      Iterator it = lsd._store.entrySet().iterator();
+
+      while (it.hasNext()) {
+          Map.Entry pair = (Map.Entry) it.next();
+          lsaArray.add((LSA) pair.getValue());
+      }
+
+      // share the LSP with all neighbors
+      broadcastLSP(lsaArray);
+
+      // close socket
+      try {
+          if (clientSocket[portIndex] != null) {
+              clientSocket[portIndex].close();
+          }
+      } catch (IOException e) {
+          System.err.println("IO Exception caused by diconnect: ");
+          e.printStackTrace();
       }
   }
 
