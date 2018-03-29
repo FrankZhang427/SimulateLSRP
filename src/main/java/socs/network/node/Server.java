@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 
 /**
@@ -89,9 +90,9 @@ public class Server implements Runnable{
                 out = new ObjectOutputStream(clientSocket.getOutputStream());
                 try {
                     SOSPFPacket received = (SOSPFPacket) in.readObject();
-                    System.out.println("");
                     // hello packet
                     if (received.sospfType == 0) {
+                        System.out.println("");
                         System.out.println("received HELLO from " + received.srcIP + ";");
 
                         // check if the target router has already been attached
@@ -140,8 +141,10 @@ public class Server implements Runnable{
                         // 2. add this new link to the LSA, which originated at the server end
                         // 3. then share the LSP with all neighbors
                         router.lsaUpdate(received.srcIP, received.srcProcessPort, received.weight);
+                        System.out.print(">> ");
 
                     } else if (received.sospfType == 1) {
+                        System.out.println("");
                         // LSP
                         System.out.println("received LSP from " + received.srcIP + ";");
 
@@ -165,8 +168,25 @@ public class Server implements Runnable{
                                 router.forwardLSP(received);
                             }
                         }
+                        System.out.print(">> ");
+                    } else if (received.sospfType == 2) {
+                        // Periodical Hello
+//                        System.out.println("Periodical Hello received from " + received.srcIP);
+                        Vector<LSA> lsaArray = new Vector<LSA>();
+                        //lsaArray.add(lsa);
+                        Iterator it = router.lsd._store.entrySet().iterator();
+
+                        while (it.hasNext()) {
+                            Map.Entry pair = (Map.Entry)it.next();
+                            lsaArray.add((LSA) pair.getValue());
+                        }
+
+                        SOSPFPacket sent = new SOSPFPacket(router.rd.processIPAddress, router.rd.processPortNumber,
+                                router.rd.simulatedIPAddress, received.srcIP, (short) 1,
+                                "", "", lsaArray, received.weight);
+                        out.writeObject(sent);
+//                        System.out.println("Feedback sent to " + received.srcIP);
                     }
-                    System.out.print(">> ");
                     in.close();
                     out.close();
                 } catch (ClassNotFoundException cnfe) {
