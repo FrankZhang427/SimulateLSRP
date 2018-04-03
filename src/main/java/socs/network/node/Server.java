@@ -172,20 +172,30 @@ public class Server implements Runnable{
                     } else if (received.sospfType == 2) {
                         // Periodical Hello
 //                        System.out.println("Periodical Hello received from " + received.srcIP);
-                        Vector<LSA> lsaArray = new Vector<LSA>();
-                        //lsaArray.add(lsa);
-                        Iterator it = router.lsd._store.entrySet().iterator();
-
-                        while (it.hasNext()) {
-                            Map.Entry pair = (Map.Entry)it.next();
-                            lsaArray.add((LSA) pair.getValue());
+                        boolean connected = false;
+                        for (Link l : router.ports) {
+                            if (null == l) continue;
+                            if (l.router2.simulatedIPAddress.equals(received.srcIP) && l.router2.status == RouterStatus.TWO_WAY) {
+                                connected = true;
+                                break;
+                            }
                         }
+                        if (connected) {
+                            Vector<LSA> lsaArray = new Vector<LSA>();
+                            //lsaArray.add(lsa);
+                            Iterator it = router.lsd._store.entrySet().iterator();
 
-                        SOSPFPacket sent = new SOSPFPacket(router.rd.processIPAddress, router.rd.processPortNumber,
-                                router.rd.simulatedIPAddress, received.srcIP, (short) 1,
-                                "", "", lsaArray, received.weight);
-                        out.writeObject(sent);
+                            while (it.hasNext()) {
+                                Map.Entry pair = (Map.Entry) it.next();
+                                lsaArray.add((LSA) pair.getValue());
+                            }
+
+                            SOSPFPacket sent = new SOSPFPacket(router.rd.processIPAddress, router.rd.processPortNumber,
+                                    router.rd.simulatedIPAddress, received.srcIP, (short) 1,
+                                    "", "", lsaArray, received.weight);
+                            out.writeObject(sent);
 //                        System.out.println("Feedback sent to " + received.srcIP);
+                        } else { /* send nothing back */ }
                     }
                     in.close();
                     out.close();

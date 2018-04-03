@@ -70,18 +70,23 @@ public class HeartbeatTask extends TimerTask{
                     String remoteIP = router.ports[i].router2.simulatedIPAddress;
                     LSA remoteLSA = router.lsd._store.get(remoteIP);
                     remoteLSA.lsaSeqNumber++;
-                    for (LinkDescription ld : remoteLSA.links) {
+                    Iterator<LinkDescription> iter = remoteLSA.links.iterator();
+                    while (iter.hasNext()) {
+                        LinkDescription ld = iter.next();
                         if (ld.linkID.equals(router.rd.simulatedIPAddress)) {
-                            remoteLSA.links.remove(ld);
+                            iter.remove();
                         }
                     }
+
 
                     // update LSA of local router
                     LSA localLSA = router.lsd._store.get(router.rd.simulatedIPAddress);
                     localLSA.lsaSeqNumber++;
-                    for (LinkDescription ld : localLSA.links) {
+                    Iterator<LinkDescription> iter2 = localLSA.links.iterator();
+                    while (iter2.hasNext()) {
+                        LinkDescription ld = iter2.next();
                         if (ld.linkID.equals(remoteIP)) {
-                            localLSA.links.remove(ld);
+                            iter2.remove();
                         }
                     }
 
